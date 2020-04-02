@@ -2,10 +2,11 @@ import numpy as np
 import tensorflow as tf
 import pandas as pd
 import cv2, time, socket, struct, warnings
+import face_recognition
 from pyagender import PyAgender
 warnings.filterwarnings("ignore")
 
-class DetectorAPI:
+class HumanDetector:
     def __init__(self, path_to_ckpt):
         self.path_to_ckpt = path_to_ckpt
 
@@ -56,19 +57,46 @@ class DetectorAPI:
         self.sess.close()
         self.default_graph.close()
 
+
+class FaceAgeGenderDetection(PyAgender):
+    #the face detection from PyAgender is not that good so I'll use face detection from 'face_recognition' module
+    def detect_faces(self,img,margin=0.2):
+        #convert from BGR to RGB
+        img = img[:, :, ::-1]
+        # import pdb; pdb.set_trace()
+        img_h,img_w = img.shape[0],img.shape[1]
+        face_locations = face_recognition.face_locations(img)
+        face_results = []
+        for (top, right, bottom, left) in face_locations:
+            x = left
+            y = top
+            w = right - left
+            h = bottom-top
+            xi1 = max(int(x - margin * w), 0)
+            xi2 = min(int(x + w + margin * w), img_w - 1)
+            yi1 = max(int(y - margin * h), 0)
+            yi2 = min(int(y + h + margin * h), img_h - 1)
+            detection = {'left': xi1, 'top': yi1, 'right': xi2, 'bottom': yi2,
+                         'width': (xi2 - xi1), 'height': (yi2 - yi1)}
+            face_results.append(detection)
+
+        return face_results
+
+
+
 if __name__ == "__main__":
 
     #object that does human detection
-    odapi = DetectorAPI(path_to_ckpt='faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb')
+    odapi = HumanDetector(path_to_ckpt='faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb')
     threshold = 0.7
 
     #object that does the age and gender classification
-    agender = PyAgender()
+    agender = FaceAgeGenderDetection()
 
     #getting the live feed
-    #cap = cv2.VideoCapture()
-    #cap.open("http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370")
-    cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+    cap = cv2.VideoCapture()
+    cap.open("http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370")
+    #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
 
     while True:
         r, img = cap.read()
@@ -95,6 +123,7 @@ if __name__ == "__main__":
                 box = boxes[i]
                 cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
 
+        #puts the bounding boxes for the face detection
         for face in faces:
             cv2.rectangle(img,(face['left'],face['top']),(face['right'],face['bottom']),(0,0,255),2)
             gender = 'Male' if face['gender'] <= 0.5 else 'Female'
