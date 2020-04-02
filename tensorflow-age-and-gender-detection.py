@@ -10,11 +10,12 @@ agender = PyAgender()
 
 #while True:
 #r, img = cap.read()
-img = cv2.imread('manda.jpeg')
+img = cv2.imread('data/celebs.jpeg')
 #img = cv2.resize(img, (720, 480))
 faces = agender.detect_genders_ages(img)
 for face in faces:
 #face = faces[0]
+    import pdb; pdb.set_trace()
     cv2.rectangle(img,(face['left'],face['top']),(face['right'],face['bottom']),(0,0,255),2)
     gender = 'Male' if face['gender'] <= 0.5 else 'Female'
     txt = 'Gender:{}, Age:{}'.format(gender,int(face['age']))
