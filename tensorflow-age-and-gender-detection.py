@@ -1,21 +1,39 @@
-from pyagender import PyAgender
 import cv2
-import warnings
+import face_recognition
+from pyagender import PyAgender
 
-warnings.filterwarnings("ignore")
-agender = PyAgender()
+class FaceAgeGenderDetection(PyAgender):
+    #the face detection from PyAgender is not that good so I'll use from other lib
+    def detect_faces(self,img,margin=0.2):
+        #margin=0.2
+        #convert from BGR to RGB
+        img = img[:, :, ::-1]
+        # import pdb; pdb.set_trace()
+        img_h,img_w = img.shape[0],img.shape[1]
+        face_locations = face_recognition.face_locations(img)
+        face_results = []
+        for (top, right, bottom, left) in face_locations:
+            x = left
+            y = top
+            w = right - left
+            h = bottom-top
+            xi1 = max(int(x - margin * w), 0)
+            xi2 = min(int(x + w + margin * w), img_w - 1)
+            yi1 = max(int(y - (margin+0.25) * h), 0)
+            yi2 = min(int(y + h + margin * h), img_h - 1)
+            detection = {'left': xi1, 'top': yi1, 'right': xi2, 'bottom': yi2,
+                         'width': (xi2 - xi1), 'height': (yi2 - yi1)}
+            face_results.append(detection)
 
-#cap=cv2.VideoCapture(0)
+        return face_results
 
-
-#while True:
-#r, img = cap.read()
-img = cv2.imread('data/celebs.jpeg')
-#img = cv2.resize(img, (720, 480))
+agender = FaceAgeGenderDetection()
+img = cv2.imread('data/church.jpeg')
+#img = cv2.resize(img, (480, 720))
 faces = agender.detect_genders_ages(img)
 for face in faces:
 #face = faces[0]
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
     cv2.rectangle(img,(face['left'],face['top']),(face['right'],face['bottom']),(0,0,255),2)
     gender = 'Male' if face['gender'] <= 0.5 else 'Female'
     txt = 'Gender:{}, Age:{}'.format(gender,int(face['age']))
@@ -27,24 +45,21 @@ for face in faces:
 
 cv2.imshow("preview", img)
 key = cv2.waitKey()
-#import pdb;pdb.set_trace()
-print(faces)
-#img = cv2.resize(img, (1280, 720))
 
-#boxes, scores, classes, num = odapi.processFrame(img)
-#df = pd.DataFrame(zip(scores,classes), columns=['scores','classes'])
-#print('Number of persons: {}'.format(len(df.loc[(df.classes==1) & (df.scores>threshold)])))
-#import pdb;pdb.set_trace()
 
-# Visualization of the results of a detection.
-
-# for i in range(len(boxes)):
-#     # Class 1 represents human
-#     if classes[i] == 1 and scores[i] > threshold:
-#         box = boxes[i]
-#         cv2.rectangle(img,(box[1],box[0]),(box[3],box[2]),(255,0,0),2)
+# img = cv2.imread('data/gabriel.jpeg')
 #
-# cv2.imshow("preview", img)
-# key = cv2.waitKey(1)
-# if key & 0xFF == ord('q'):
-#     break
+# #image = face_recognition.load_image_file("your_file.jpg")
+#
+# face_locations = face_recognition.face_locations(img)
+# #import pdb; pdb.set_trace()
+#
+# # Display the results
+# for top, right, bottom, left in face_locations:
+#     # Draw a box around the face
+#     cv2.rectangle(img, (left, top), (right, bottom), (0, 0, 255), 2)
+#
+# # Display the resulting image
+# cv2.imshow('Video', img)
+#
+# cv2.waitKey()
