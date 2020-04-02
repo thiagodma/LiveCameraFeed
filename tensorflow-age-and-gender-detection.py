@@ -28,7 +28,7 @@ class FaceAgeGenderDetection(PyAgender):
         return face_results
 
 agender = FaceAgeGenderDetection()
-img = cv2.imread('data/church.jpeg')
+img = cv2.imread('data/manda.jpeg')
 #img = cv2.resize(img, (480, 720))
 faces = agender.detect_genders_ages(img)
 for face in faces:
