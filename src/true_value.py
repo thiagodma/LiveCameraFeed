@@ -49,7 +49,6 @@ class TrueValue():
 
         #calculates the number of persons in the image and puts the bounding boxes
         num_persons, img = self.human_detector.process_frame(boxes, scores, classes, img)
-        all_num_persons.append(num_persons)
 
         #puts the bounding boxes and returns lists with ages and genders
         ages, num_males, num_females, img = self.agender_detector.process_frame(faces,img)
