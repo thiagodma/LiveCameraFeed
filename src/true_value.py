@@ -9,13 +9,9 @@ from detectors import HumanDetector, FaceAgeGenderDetection
 warnings.filterwarnings('ignore')
 
 class TrueValue():
-    def __init__(self,human_detector:HumanDetector,agender_detector:FaceAgeGenderDetection,
-                video_link:str,proc_img_path:str, graphs_paths:list):
+    def __init__(self,human_detector:HumanDetector,agender_detector:FaceAgeGenderDetection):
         self.human_detector = human_detector        #class that does the human detection
         self.agender_detector = agender_detector    #class that does age and gender detection
-        self.video_link = video_link                #link to the video feed
-        self.proc_img_path = proc_img_path          #path to the dir for the processed images
-        self.graphs_path = graphs_path
 
     def save_stats(self,num_persons,ages,num_males,num_females,now):
         if not os.path.isfile('../data.csv'):
@@ -41,42 +37,28 @@ class TrueValue():
             writer.writerow(row)
 
 
-    def run(self):
+    def run(self,img):
 
-        #getting the live feed
-        cap = cv2.VideoCapture()
-        cap.open(self.video_link)
+        now = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        all_nows.append(now)
 
-        while True:
-            _ , img = cap.read()
+        #detects humans
+        boxes, scores, classes = self.human_detector.detect_humans(img)
 
-            now = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-            all_nows.append(now)
+        #detects genders and ages
+        faces = self.agender_detector.detect_genders_ages(img)
 
-            #detects humans
-            boxes, scores, classes = self.human_detector.detect_humans(img)
+        #calculates the number of persons in the image and puts the bounding boxes
+        num_persons, img = self.human_detector.process_frame(boxes, scores, classes, img)
+        all_num_persons.append(num_persons)
 
-            #detects genders and ages
-            faces = self.agender_detector.detect_genders_ages(img)
+        #puts the bounding boxes and returns lists with ages and genders
+        ages, num_males, num_females, img = self.agender_detector.process_frame(faces,img)
 
-            #calculates the number of persons in the image and puts the bounding boxes
-            num_persons, img = self.human_detector.process_frame(boxes, scores, classes, img)
-            all_num_persons.append(num_persons)
+        #saves the processed frame as an image
+        #cv2.imwrite(self.proc_img_path + '/' + now + '.jpg',img)
 
-            #puts the bounding boxes and returns lists with ages and genders
-            ages, num_males, num_females, img = self.agender_detector.process_frame(faces,img)
+        #saves the stats
+        self.save_stats(num_persons,ages,num_males,num_females,now)
 
-            #saves the processed frame as an image
-            #cv2.imwrite(self.proc_img_path + '/' + now + '.jpg',img)
-
-            #saves the stats
-            self.save_stats(num_persons,ages,num_males,num_females,now)
-
-            i+=1
-
-
-
-                #cv2.imshow("preview", img)
-                #key = cv2.waitKey(1)
-                #if key & 0xFF == ord('q'):
-                #    break
+        return img
