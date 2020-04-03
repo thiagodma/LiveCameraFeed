@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import pandas as pd
-import cv2, time, socket, struct, warnings, os, csv
+import cv2, time, socket, struct, warnings, os, csv, pickle
 import face_recognition
 from datetime import datetime,timedelta
 from pyagender import PyAgender
@@ -19,8 +19,14 @@ class TrueValue():
                                        'num_people','(0-10)','(10-20)',
                                        '(20-30)','(30-40)','(40-50)',
                                        '(50-60)','(60-70)','(70-inf)'])
+            #saves the first datetime available
+            with open('first_date.pkl', 'wb') as f: pickle.dump(now, f)
+            #saves the basic csv
             df.to_csv('data.csv',index=False)
 
+        #saves the last datetime available
+        with open('last_date.pkl', 'wb') as f: pickle.dump(now, f)
+        
         row = [now,num_males,num_females,num_people] + [0]*8
         for age in ages:
             if age <= 10: row[4]+=1
