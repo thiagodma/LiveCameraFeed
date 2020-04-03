@@ -2,6 +2,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from true_value import TrueValue
+from datetime import datetime as dt
 from detectors import HumanDetector, FaceAgeGenderDetection
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
@@ -10,14 +11,11 @@ import cv2,os
 import pandas as pd
 # import pdb; pdb.set_trace()
 model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-human_detector = HumanDetector(model_path)
+#model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+
+human_detector = HumanDetector(model_path,threshold=0.7)
 agender_detector = FaceAgeGenderDetection()
 truevalue = TrueValue(human_detector,agender_detector)
-
-#cap = cv2.VideoCapture()
-#cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
-#cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
-
 
 
 class VideoCamera():
@@ -25,6 +23,7 @@ class VideoCamera():
         #cap = cv2.VideoCapture()
         #cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
         #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+        #cap = cv2.VideoCapture('data/classroom.mp4')
         #cap = cv2.VideoCapture('data/video2.mp4')
         cap = cv2.VideoCapture('data/video1.avi')
         # cap = cv2.VideoCapture('data/TownCentreXVID.avi.1')
@@ -52,8 +51,9 @@ def gen(camera):
         yield(b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 server = Flask(__name__)
-app = dash.Dash(__name__, server=server)
+app = dash.Dash(__name__, server=server,external_stylesheets=external_stylesheets)
 
 
 @server.route('/video_feed')
@@ -76,6 +76,17 @@ app.layout = html.Div(
 
          html.Div(
          [
+            dcc.DatePickerSingle(
+                id='my-date-picker-single',
+                min_date_allowed=dt(1995, 8, 5),
+                max_date_allowed=dt(2017, 9, 19),
+                initial_visible_month=dt(2017, 8, 5),
+                date=str(dt(2017, 8, 25, 23, 59, 59))
+            )
+         ]),
+
+         html.Div(
+         [
             dcc.Graph(
                 id='num_people',
                 figure=dict(
@@ -86,6 +97,7 @@ app.layout = html.Div(
                         width=750,
                     )
                 ),
+                style={'textAlign':'center'}
             ),
 
             dcc.Interval(
@@ -127,7 +139,7 @@ def gen_num_people(interval):
 
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
 
-    data =  [{'x':df.index,'y':df.num_persons,'type':'scatter','name':'Number of persons',
+    data =  [{'x':df.index,'y':df.num_people,'type':'scatter','name':'Number of people',
             'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
              {'x':df.index,'y':df.num_male,'type':'scatter','name':'Number of males',
              'line':{'color': '#F1785E'}, 'hoverinfo':'skip','mode':'lines'},
@@ -135,7 +147,7 @@ def gen_num_people(interval):
              'line':{'color': '#83DD5C'}, 'hoverinfo':'skip','mode':'lines'}]
 
     layout = dict(
-        title='Number of Persons',
+        title='Number of People',
         plot_bgcolor=app_color['graph_bg'],
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
@@ -151,7 +163,7 @@ def gen_num_people(interval):
             'title': 'Time',
         },
         yaxis={
-            'range': [0,max(df.num_persons)+1],
+            'range': [0,max(df.num_people)+1],
             'showgrid': True,
             'showline': True,
             'fixedrange': True,
@@ -178,7 +190,7 @@ def gen_num_ages(interval):
     if not os.path.isfile('data.csv'): return esc
 
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
-    #(0-10),(10-20),(20-30),(30-40),(40-50),(50-60),(60-70),(70-inf)
+
     data =  [{'x':df.index,'y':df['(0-10)'],'type':'scatter','name':'(0-10)',
             'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
              {'x':df.index,'y':df['(10-20)'],'type':'scatter','name':'(10-20)',
@@ -197,7 +209,7 @@ def gen_num_ages(interval):
             'line':{'color':'#F5FD03'}, 'hoverinfo':'skip','mode':'lines'},]
 
     layout = dict(
-        title='Number of Persons per Age Group',
+        title='Number of People per Age Group',
         plot_bgcolor=app_color['graph_bg'],
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
