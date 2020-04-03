@@ -14,7 +14,11 @@ pip3 install face_recognition
 
 wget -O faster_rcnn_inception_v2_coco_2018_01_28.tar.gz  http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
 
+wget -O ssd_mobilenet_v1_coco_2017_11_17.tar.gz http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_coco_2017_11_17.tar.gz
+
 tar -zxvf faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
+tar -zxvf ssd_mobilenet_v1_coco_2017_11_17.tar.gz
+
 
 mkdir graphs
 mkdir proc_imgs
