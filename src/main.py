@@ -50,8 +50,7 @@ class VideoCamera():
 
 def gen(camera):
     while True:
-        for _ in range(2):
-            frame = camera.get_frame()
+        frame = camera.get_frame()
         yield(b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
