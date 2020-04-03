@@ -6,7 +6,7 @@ from detectors import HumanDetector, FaceAgeGenderDetection
 from dash.exceptions import PreventUpdate
 from dash.dependencies import Input, Output, State
 from flask import Flask, Response
-import cv2
+import cv2,os
 import pandas as pd
 # import pdb; pdb.set_trace()
 model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
@@ -14,15 +14,20 @@ human_detector = HumanDetector(model_path)
 agender_detector = FaceAgeGenderDetection()
 truevalue = TrueValue(human_detector,agender_detector)
 
-server = Flask(__name__)
-app = dash.Dash(__name__, server=server)
+#cap = cv2.VideoCapture()
+#cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
+#cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+
 
 
 class VideoCamera():
     def __init__(self):
-        cap = cv2.VideoCapture()
-        cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
+        #cap = cv2.VideoCapture()
+        #cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
         #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+        #cap = cv2.VideoCapture('data/video2.mp4')
+        cap = cv2.VideoCapture('data/video1.avi')
+        # cap = cv2.VideoCapture('data/TownCentreXVID.avi.1')
         self.video = cap
 
     def __del__(self):
@@ -30,24 +35,31 @@ class VideoCamera():
 
     def get_frame(self):
         _ , img = self.video.read()
-        img = cv2.resize(img, (480, 240))
-        img = truevalue.run(img)
+        img = cv2.resize(img, (640, 400))
+        #img = cv2.resize(img,(384,216))
+        try:
+            img = truevalue.run(img)
+        except:
+            pass
         ret, jpeg = cv2.imencode('.jpg', img)
         return jpeg.tobytes()
 
 
 def gen(camera):
     while True:
-        for _ in range(2):
-            frame = camera.get_frame()
+        #for _ in range(2):
+        frame = camera.get_frame()
         yield(b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+server = Flask(__name__)
+app = dash.Dash(__name__, server=server)
+
 
 @server.route('/video_feed')
 def video_feed():
     return Response(gen(VideoCamera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
-
 
 
 app_color = {"graph_bg": "#082255", "graph_line": "#007ACE"}
@@ -57,75 +69,89 @@ app.layout = html.Div(
     [
          html.Div(
          [
-            html.H1('Webcam Test'),
+            #html.H1('Webcam Test'),
             html.Img(src='/video_feed',
                      style={'height':'70%','width':'70%'})
          ], style={'textAlign':'center'}),
 
          html.Div(
          [
-            html.Div([html.H6('Number of people in the laundry')]),
-
             dcc.Graph(
                 id='num_people',
                 figure=dict(
-                        layout=dict(
-                                plot_bgcolor=app_color['graph_bg'],
-                                paper_bgcolor=app_color['graph_bg'])
-                           ),
-                     ),
+                    layout=dict(
+                        plot_bgcolor=app_color["graph_bg"],
+                        paper_bgcolor=app_color["graph_bg"],
+                        height=500,
+                        width=750,
+                    )
+                ),
+            ),
+
             dcc.Interval(
-                id='num_people_update',
-                interval=10000,
+                id='update',
+                interval=1000,
                 n_intervals=0
             ),
-         ])
+         ], style={'textAlign':'center'}),
 
+         html.Div([
+            dcc.Graph(
+                id='num_ages',
+                figure=dict(
+                    layout=dict(
+                        plot_bgcolor=app_color["graph_bg"],
+                        paper_bgcolor=app_color["graph_bg"],
+                        height=500,
+                        width=750,
+                    )
+                ),
+            ),
+         ], style={'textAlign':'center'})
     ])
 
-if __name__ == '__main__':
-    app.run_server(debug=True)
 
-
-
-
-@app.callback(
-    Output('num_people', 'figure'), [Input('num_people_update', 'n_intervals')]
-)
+@app.callback(Output('num_people', 'figure'), [Input('update', 'n_intervals')])
 def gen_num_people(interval):
     """
     Generate the wind speed graph.
     :params interval: update the graph based on an interval
     """
 
-    #total_time = get_current_time()
-    #df = get_wind_data(total_time - 200, total_time)
-    df = pd.read_csv('data.csv',index='time',parse_dates=['time']).tail(5) #gets the last 200 datapoints
+    esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
+                      paper_bgcolor=app_color["graph_bg"],
+                    height=500,
+                    width=750))
 
-    trace = dict(
-        type='scatter',
-        y=df['num_persons'],
-        line={'color': '#42C4F7'},
-        hoverinfo='skip',
-        mode='lines',
-    )
+    if not os.path.isfile('data.csv'): return esc
+
+    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
+
+    data =  [{'x':df.index,'y':df.num_persons,'type':'scatter','name':'Number of persons',
+            'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df.num_male,'type':'scatter','name':'Number of males',
+             'line':{'color': '#F1785E'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df.num_female,'type':'scatter','name':'Number of females',
+             'line':{'color': '#83DD5C'}, 'hoverinfo':'skip','mode':'lines'}]
 
     layout = dict(
+        title='Number of Persons',
         plot_bgcolor=app_color['graph_bg'],
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
-        height=700,
+        height=500,
+        width=750,
         xaxis={
-            'range': [0, 5],
+            #'range': 10,
             'showline': True,
             'zeroline': False,
             'fixedrange': True,
-            'tickvals': [0, 1, 2, 3, 4],
-            'ticktext': ['0', '1', '2', '3', '4'],
-            'title': 'Time Elapsed (sec)',
+            #'tickvals': [0, 1, 2, 3, 4],
+            #'ticktext': ['0', '1', '2', '3', '4'],
+            'title': 'Time',
         },
         yaxis={
-            'range': [0,20],
+            'range': [0,max(df.num_persons)+1],
             'showgrid': True,
             'showline': True,
             'fixedrange': True,
@@ -135,4 +161,69 @@ def gen_num_people(interval):
         },
     )
 
-    return dict(data=[trace], layout=layout)
+    return dict(data=data, layout=layout)
+
+@app.callback(Output('num_ages', 'figure'), [Input('update', 'n_intervals')])
+def gen_num_ages(interval):
+    """
+    Generate the wind speed graph.
+    :params interval: update the graph based on an interval
+    """
+
+    esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
+                      paper_bgcolor=app_color["graph_bg"],
+                    height=500,
+                    width=750))
+
+    if not os.path.isfile('data.csv'): return esc
+
+    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
+    #(0-10),(10-20),(20-30),(30-40),(40-50),(50-60),(60-70),(70-inf)
+    data =  [{'x':df.index,'y':df['(0-10)'],'type':'scatter','name':'(0-10)',
+            'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(10-20)'],'type':'scatter','name':'(10-20)',
+            'line':{'color':'#F1785E'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(20-30)'],'type':'scatter','name':'(20-30)',
+            'line':{'color':'#83DD5C'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(30-40)'],'type':'scatter','name':'(30-40)',
+            'line':{'color':'#DACE5C'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(40-50)'],'type':'scatter','name':'(40-50)',
+            'line':{'color':'#EEC5EB'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(50-60)'],'type':'scatter','name':'(50-60)',
+            'line':{'color':'#EE2BC7'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(60-70)'],'type':'scatter','name':'(60-70)',
+            'line':{'color':'#EE3A3A'}, 'hoverinfo':'skip','mode':'lines'},
+             {'x':df.index,'y':df['(70-inf)'],'type':'scatter','name':'(>70)',
+            'line':{'color':'#F5FD03'}, 'hoverinfo':'skip','mode':'lines'},]
+
+    layout = dict(
+        title='Number of Persons per Age Group',
+        plot_bgcolor=app_color['graph_bg'],
+        paper_bgcolor=app_color['graph_bg'],
+        font={'color': '#fff'},
+        height=500,
+        width=750,
+        xaxis={
+            #'range': 10,
+            'showline': True,
+            'zeroline': False,
+            'fixedrange': True,
+            #'tickvals': [0, 1, 2, 3, 4],
+            #'ticktext': ['0', '1', '2', '3', '4'],
+            'title': 'Time',
+        },
+        yaxis={
+            'range': [0,df.iloc[:,3:].max().max()+1],
+            'showgrid': True,
+            'showline': True,
+            'fixedrange': True,
+            'zeroline': False,
+            'gridcolor': app_color['graph_line'],
+            #'nticks': max(6, round(df['Speed'].iloc[-1] / 10)),
+        },
+    )
+
+    return dict(data=data, layout=layout)
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
