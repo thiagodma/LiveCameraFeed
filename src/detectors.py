@@ -113,7 +113,7 @@ class FaceAgeGenderDetection(PyAgender):
             ages.append(int(face['age']))
 
         genders = np.array(genders)
-        num_males = len(gender.where(genders=='Male')[0])
+        num_males = len(np.where(genders=='Male')[0])
         num_females = len(genders) - num_males
 
         return ages, num_males, num_females, img
