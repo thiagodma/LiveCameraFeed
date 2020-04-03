@@ -60,7 +60,7 @@ class HumanDetector():
         num_people = len(df.loc[(df.classes==1) & (df.scores>self.threshold)])
 
         #prints the number of persons on the image
-        cv2.putText(img, 'Number of persons: {}'.format(num_people) ,(0,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2)
+        cv2.putText(img, 'Number of people: {}'.format(num_people) ,(0,40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 2)
 
         #puts the bounding boxes for the human detection
         for i in range(len(boxes)):
@@ -84,7 +84,7 @@ class FaceAgeGenderDetection(PyAgender):
         img = img[:, :, ::-1]
         # import pdb; pdb.set_trace()
         img_h,img_w = img.shape[0],img.shape[1]
-        face_locations = face_recognition.face_locations(img,model='hog',number_of_times_to_upsample=2)
+        face_locations = face_recognition.face_locations(img,model='hog',number_of_times_to_upsample=1)
         face_results = []
         for (top, right, bottom, left) in face_locations:
             x,y,w,h = left,top,right-left,bottom-top
