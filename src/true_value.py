@@ -40,7 +40,6 @@ class TrueValue():
     def run(self,img):
 
         now = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        all_nows.append(now)
 
         #detects humans
         boxes, scores, classes = self.human_detector.detect_humans(img)
