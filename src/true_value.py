@@ -72,10 +72,11 @@ if __name__ == '__main__':
     agender_detector = FaceAgeGenderDetection()
     truevalue = TrueValue(human_detector,agender_detector)
 
-    cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+    cap = cv2.VideoCapture('data/classroom.mp4')
     while True:
-        for _ in range(6):
+        for _ in range(30):
             r, img = cap.read()
+        img = cv2.resize(img, (640, 400))
         img = truevalue.run(img)
         #cv2.imwrite('bla.jpg',img)
         cv2.imshow("preview", img)
