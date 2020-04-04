@@ -79,12 +79,18 @@ class HumanDetector():
 
 class FaceAgeGenderDetection(PyAgender):
     #the face detection from PyAgender is not that good so I'll use face detection from 'face_recognition' module
+
+    def __init__(self,model:str='hog',up_times:int=1):
+        super().__init__()
+        self.model = model
+        self.up_times = up_times
+
     def detect_faces(self,img,margin=0.2):
         #convert from BGR to RGB
         img = img[:, :, ::-1]
         # import pdb; pdb.set_trace()
         img_h,img_w = img.shape[0],img.shape[1]
-        face_locations = face_recognition.face_locations(img,model='hog',number_of_times_to_upsample=1)
+        face_locations = face_recognition.face_locations(img,model=self.model,number_of_times_to_upsample=self.up_times)
         face_results = []
         for (top, right, bottom, left) in face_locations:
             x,y,w,h = left,top,right-left,bottom-top
