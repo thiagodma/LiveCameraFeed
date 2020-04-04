@@ -26,7 +26,7 @@ class TrueValue():
 
         #saves the last datetime available
         with open('last_date.pkl', 'wb') as f: pickle.dump(now, f)
-        
+
         row = [now,num_males,num_females,num_people] + [0]*8
         for age in ages:
             if age <= 10: row[4]+=1
@@ -83,8 +83,8 @@ if __name__ == '__main__':
     # cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
     fr=30
     while True:
-        for _ in range(fr):
-            r, img = cap.read()
+        #for _ in range(fr):
+        r, img = cap.read()
         img = cv2.resize(img, (640, 400))
         img = truevalue.run(img)
         #cv2.imwrite('bla.jpg',img)
