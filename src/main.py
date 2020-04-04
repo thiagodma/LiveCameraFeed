@@ -9,7 +9,6 @@ from dash.dependencies import Input, Output, State
 from flask import Flask, Response
 import cv2,os
 import pandas as pd
-# import pdb; pdb.set_trace()
 #model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
 model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
 
@@ -22,10 +21,10 @@ max_range = 100
 
 class VideoCamera():
     def __init__(self):
-        #cap = cv2.VideoCapture()
-        #cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
+        cap = cv2.VideoCapture()
+        cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
         #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
-        cap = cv2.VideoCapture('data/classroom.mp4')
+        #cap = cv2.VideoCapture('data/classroom.mp4')
         #cap = cv2.VideoCapture('data/video2.mp4')
         #cap = cv2.VideoCapture('data/video1.avi')
         # cap = cv2.VideoCapture('data/TownCentreXVID.avi.1')
@@ -37,7 +36,6 @@ class VideoCamera():
     def get_frame(self):
         _ , img = self.video.read()
         img = cv2.resize(img, (640, 400))
-        #img = cv2.resize(img,(384,216))
         try:
             img = truevalue.run(img)
         except:
@@ -45,10 +43,9 @@ class VideoCamera():
         ret, jpeg = cv2.imencode('.jpg', img)
         return jpeg.tobytes()
 
-
+#generator function to send frame by frame
 def gen(camera):
     while True:
-        #for _ in range(2):
         frame = camera.get_frame()
         yield(b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
@@ -104,7 +101,7 @@ app.layout = html.Div(
                             plot_bgcolor=app_color["graph_bg"],
                             paper_bgcolor=app_color["graph_bg"],
                             height=400,
-                            width=550,
+                            width=520,
                         )
                     ),
                 ),
@@ -118,7 +115,7 @@ app.layout = html.Div(
                             plot_bgcolor=app_color["graph_bg"],
                             paper_bgcolor=app_color["graph_bg"],
                             height=400,
-                            width=550,
+                            width=520,
                         )
                     ),
                 ),
@@ -141,14 +138,16 @@ app.layout = html.Div(
 )
 def gen_num_people(interval,n_clicks,range):
     """
-    Generate the wind speed graph.
-    :params interval: update the graph based on an interval
+    Generate the ages graph.
+    interval: update the graph based on an interval
+    n_clicks: number of clicks on the button
+    range: user provided range
     """
 
     esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
                       paper_bgcolor=app_color["graph_bg"],
                     height=400,
-                    width=550))
+                    width=520))
 
     if not os.path.isfile('data.csv'): return esc
 
@@ -173,14 +172,11 @@ def gen_num_people(interval,n_clicks,range):
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
         height=400,
-        width=550,
+        width=520,
         xaxis={
-            #'range': 10,
             'showline': True,
             'zeroline': False,
             'fixedrange': True,
-            #'tickvals': [0, 1, 2, 3, 4],
-            #'ticktext': ['0', '1', '2', '3', '4'],
             'title': 'Time',
         },
         yaxis={
@@ -190,7 +186,6 @@ def gen_num_people(interval,n_clicks,range):
             'fixedrange': True,
             'zeroline': False,
             'gridcolor': app_color['graph_line'],
-            #'nticks': max(6, round(df['Speed'].iloc[-1] / 10)),
         },
     )
 
@@ -204,21 +199,23 @@ def gen_num_people(interval,n_clicks,range):
 )
 def gen_num_ages(interval,n_clicks,range):
     """
-    Generate the wind speed graph.
-    :params interval: update the graph based on an interval
+    Generate the ages graph.
+    interval: update the graph based on an interval
+    n_clicks: number of clicks on the button
+    range: user provided range
     """
 
-    esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
-                      paper_bgcolor=app_color["graph_bg"],
+    esc = dict(layout= dict(plot_bgcolor=app_color['graph_bg'],
+                      paper_bgcolor=app_color['graph_bg'],
                     height=400,
-                    width=550))
+                    width=520))
 
     if not os.path.isfile('data.csv'): return esc
 
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
 
     if n_clicks%2 != 0:
-        df = df.iloc[range[0]:range[1],:]
+        df = df.iloc[range[0]:range[1],:] #if the user wants to set himself the ranges
     else:
         df = df.tail(200) #gets the last 200 datapoints
 
@@ -245,14 +242,12 @@ def gen_num_ages(interval,n_clicks,range):
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
         height=400,
-        width=550,
+        width=520,
         xaxis={
             #'range': 10,
             'showline': True,
             'zeroline': False,
             'fixedrange': True,
-            #'tickvals': [0, 1, 2, 3, 4],
-            #'ticktext': ['0', '1', '2', '3', '4'],
             'title': 'Time',
         },
         yaxis={
@@ -262,7 +257,6 @@ def gen_num_ages(interval,n_clicks,range):
             'fixedrange': True,
             'zeroline': False,
             'gridcolor': app_color['graph_line'],
-            #'nticks': max(6, round(df['Speed'].iloc[-1] / 10)),
         },
     )
 
