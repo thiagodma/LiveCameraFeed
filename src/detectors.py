@@ -7,6 +7,15 @@ from pyagender import PyAgender
 warnings.filterwarnings('ignore')
 
 class HumanDetector():
+    """
+    This class uses a trained model from the tensorflow's object detection model zoo
+    to detect people.
+
+    Inputs:
+        path_to_ckpt: the path to the model for inference
+        threshold: parameter that sets the minimum model's confidence to say the object is
+        a person. Its a float in range (0,1)
+    """
     def __init__(self, path_to_ckpt:str,threshold:float=0.7):
         self.path_to_ckpt = path_to_ckpt
         self.threshold = threshold
@@ -24,25 +33,35 @@ class HumanDetector():
 
         # Definite input and output Tensors for detection_graph
         self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+
         # Each box represents a part of the image where a particular object was detected.
         self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+
         # Each score represent how level of confidence for each of the objects.
-        # Score is shown on the result image, together with the class label.
         self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
         self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
         self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
     def detect_humans(self, image):
+        """
+        This method does the human detection.
+
+        Inputs:
+            image: is a numpy array that contains the image
+
+        Outputs:
+            boxes: list of tuples with keys to the bounding box of each detected object
+            scores: list with the confidences for each detection
+            classes: list with the class of each detection
+        """
+
         # Expand dimensions since the trained_model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image, axis=0)
+
         # Actual detection.
-        #start_time = time.time()
         (boxes, scores, classes, num) = self.sess.run(
             [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
             feed_dict={self.image_tensor: image_np_expanded})
-        #end_time = time.time()
-
-        #print("Elapsed Time:", end_time-start_time)
 
         im_height, im_width,_ = image.shape
         boxes_list = [None for i in range(boxes.shape[1])]
@@ -55,7 +74,22 @@ class HumanDetector():
         return boxes_list, scores[0].tolist(), [int(x) for x in classes[0].tolist()]
 
     def process_frame(self,boxes,scores,classes,img):
-        #calculates the number of persons
+        """
+        This method prints the number of people and correspondent bounding boxes
+        on the input image and returns the number of people on the image.
+
+        Inputs:
+            boxes: list of tuples with keys to the bounding box of each detected object
+            scores: list with the confidences for each detection
+            classes: list with the class of each detection
+            img: numpy array the contais the image that will be printed
+
+        Outputs:
+            num_people: number of people on the image
+            img: img with the bounding boxes and number of people printed
+        """
+
+        #calculates the number of persons (class '1' means person)
         df = pd.DataFrame(zip(scores,classes), columns=['scores','classes'])
         num_people = len(df.loc[(df.classes==1) & (df.scores>self.threshold)])
 
@@ -78,7 +112,16 @@ class HumanDetector():
 
 
 class FaceAgeGenderDetection(PyAgender):
-    #the face detection from PyAgender is not that good so I'll use face detection from 'face_recognition' module
+    """
+    This class uses two modules to detect faces and to predict gender and age.
+    The module that predicts age and gender is 'pyagender' and the module that
+    finds faces is 'face_detection'. (pyagender's face detection was not good enough)
+
+    Inputs:
+        model: is a string and can be either 'hog' or 'cnn'. 'cnn' is more accurate but slower.
+        up_times: integer in range (1,inf) that specifies the number of times to upsample the image.
+        Larger values allow better detection of little faces.
+    """
 
     def __init__(self,model:str='hog',up_times:int=1):
         super().__init__()
@@ -86,12 +129,23 @@ class FaceAgeGenderDetection(PyAgender):
         self.up_times = up_times
 
     def detect_faces(self,img,margin=0.2):
-        #convert from BGR to RGB
+        """
+        This method does the face detection.
+
+        Inputs:
+            image: is a numpy array that contains the image
+            margin: is a float that determines the size of the margin on the face detection.
+
+        Outputs:
+            faces: list of dictionaries. Each dictionary has the fields: 'left',
+            'top','right','bottom','width' and 'height' which are the coordinates to the
+            bounding boxes.
+        """
+        #converts from BGR to RGB
         img = img[:, :, ::-1]
-        # import pdb; pdb.set_trace()
         img_h,img_w = img.shape[0],img.shape[1]
         face_locations = face_recognition.face_locations(img,model=self.model,number_of_times_to_upsample=self.up_times)
-        face_results = []
+        faces = []
         for (top, right, bottom, left) in face_locations:
             x,y,w,h = left,top,right-left,bottom-top
             xi1 = max(int(x - margin * w), 0)
@@ -100,11 +154,27 @@ class FaceAgeGenderDetection(PyAgender):
             yi2 = min(int(y + h + margin * h), img_h - 1)
             detection = {'left': xi1, 'top': yi1, 'right': xi2, 'bottom': yi2,
                          'width': (xi2 - xi1), 'height': (yi2 - yi1)}
-            face_results.append(detection)
+            faces.append(detection)
 
-        return face_results
+        return faces
 
     def process_frame(self,faces,img):
+        """
+        This method prints the bounding boxes on the input image and returns
+        some statistics.
+
+        Inputs:
+            faces: list of dictionaries. Each dictionary has the fields: 'left',
+            'top','right','bottom','width' and 'height' which are the coordinates to the
+            bounding boxes.
+            img: numpy array the contais the image that will be printed
+
+        Outputs:
+            ages: list with people's ages
+            num_males: number of identified males
+            num_females: number of identified females
+            img: img with the bounding boxes printed
+        """
 
         genders = []
         ages = []
