@@ -9,4 +9,4 @@ This repo contains the code used to do an application that does:
 
 The application is fed with a live camera feed and makes plots some plots with statistics gathered from the video.
 
-<img data-canonical-src="https://raw.githubusercontent.com/thiagodma/LiveCameraFeed/master/images/img.jpg" width="500" height="500" />
+<img src="https://raw.githubusercontent.com/thiagodma/LiveCameraFeed/master/images/img.jpg" width="500" height="500" align="middle" />
