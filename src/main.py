@@ -154,6 +154,9 @@ def gen_num_people(interval,n_clicks,range):
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
     max_range = len(df)-1
 
+    #don't let the csv file increase with no limits
+    if len(df) > 100000: df.tail(100000).to_csv('data.csv',index=False)
+
     if n_clicks%2 != 0:
         df = df.iloc[range[0]:range[1],:]
     else:
@@ -213,6 +216,10 @@ def gen_num_ages(interval,n_clicks,range):
     if not os.path.isfile('data.csv'): return esc
 
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
+    
+    #don't let the csv file increase with no limits
+    if len(df) > 100000: df.tail(100000).to_csv('data.csv',index=False)
+
 
     if n_clicks%2 != 0:
         df = df.iloc[range[0]:range[1],:] #if the user wants to set himself the ranges
