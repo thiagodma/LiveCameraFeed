@@ -9,11 +9,30 @@ from detectors import HumanDetector, FaceAgeGenderDetection
 warnings.filterwarnings('ignore')
 
 class TrueValue():
+    """
+    This class applies the human detection and face detection models to get the
+    statistics we're interested on.
+
+    Inputs:
+        human_detector: an object of the HumanDetector class
+        agender_detector: an object of the FaceAgeGenderDetection class
+    """
     def __init__(self,human_detector:HumanDetector,agender_detector:FaceAgeGenderDetection):
         self.human_detector = human_detector        #class that does the human detection
         self.agender_detector = agender_detector    #class that does age and gender detection
 
     def save_stats(self,num_people,ages,num_males,num_females,now):
+        """
+        This method saves the statistics on a file.
+
+        Inputs:
+            num_people: number of people on the image
+            ages: list with people's ages
+            num_males: number of identified males
+            num_females: number of identified females
+            now: string with time when the data was collected
+        """
+
         if not os.path.isfile('data.csv'):
             df = pd.DataFrame(columns=['time','num_male','num_female',
                                        'num_people','(0-10)','(10-20)',
@@ -45,6 +64,19 @@ class TrueValue():
 
     def run(self,img):
 
+        """
+        This method applies both the human detection and face detection models, gets
+        the statistics we're interested on and calls the method 'save_stats' to save
+        the statistics on a file.
+
+        Inputs:
+            img: numpy array that contains the image we want to extract info from
+
+        Outputs:
+            img: numpy array that contais the image with all the bounding boxes and
+            with the number of people printed.
+        """
+
         #adding 5 hours save in the city's tz
         now = (datetime.now()+timedelta(hours=5)).strftime('%d/%m/%Y %H:%M:%S')
 
@@ -60,10 +92,7 @@ class TrueValue():
         #puts the bounding boxes and returns lists with ages and genders
         ages, num_males, num_females, img = self.agender_detector.process_frame(faces,img)
 
-        #saves the processed frame as an image
-        #cv2.imwrite(self.proc_img_path + '/' + now + '.jpg',img)
-
-        #saves the stats
+        #saves the stats on a file
         self.save_stats(num_people,ages,num_males,num_females,now)
 
         return img
