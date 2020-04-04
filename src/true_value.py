@@ -102,18 +102,18 @@ if __name__ == '__main__':
     #getting the live feed
     #cap = cv2.VideoCapture()
     #cap.open("http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370")
-    #model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-    model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
-    human_detector = HumanDetector(model_path,threshold=0.2)
+    model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+    #model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+    human_detector = HumanDetector(model_path,threshold=0.7)
     agender_detector = FaceAgeGenderDetection()
     truevalue = TrueValue(human_detector,agender_detector)
 
-    cap = cv2.VideoCapture('data/classroom.mp4')
-    # cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
-    fr=30
+    #cap = cv2.VideoCapture('data/classroom.mp4')
+    cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
+    fr=12
     while True:
-        #for _ in range(fr):
-        r, img = cap.read()
+        for _ in range(fr):
+            r, img = cap.read()
         img = cv2.resize(img, (640, 400))
         img = truevalue.run(img)
         #cv2.imwrite('bla.jpg',img)
