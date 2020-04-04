@@ -123,7 +123,7 @@ app.layout = html.Div(
 
             dcc.Interval(
                 id='update',
-                interval=1000,
+                interval=60000,
                 n_intervals=0
             ),
          ], className='row'),
