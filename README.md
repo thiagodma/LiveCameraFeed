@@ -9,4 +9,4 @@ This repo contains the code used to do an application that does:
 
 The application is fed with a live camera feed and makes plots some plots with statistics gathered from the video.
 
-![detection](https://raw.githubusercontent.com/thiagodma/LiveCameraFeed/master/images/img.jpg=240x240)
+![detection](https://raw.githubusercontent.com/thiagodma/LiveCameraFeed/master/images/img.jpg =240x240)
