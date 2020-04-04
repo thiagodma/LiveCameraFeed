@@ -10,12 +10,14 @@ from flask import Flask, Response
 import cv2,os
 import pandas as pd
 # import pdb; pdb.set_trace()
-model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-#model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+#model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
 
 human_detector = HumanDetector(model_path,threshold=0.7)
 agender_detector = FaceAgeGenderDetection()
 truevalue = TrueValue(human_detector,agender_detector)
+min_range = 0
+max_range = 100
 
 
 class VideoCamera():
@@ -23,9 +25,9 @@ class VideoCamera():
         #cap = cv2.VideoCapture()
         #cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
         #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
-        #cap = cv2.VideoCapture('data/classroom.mp4')
+        cap = cv2.VideoCapture('data/classroom.mp4')
         #cap = cv2.VideoCapture('data/video2.mp4')
-        cap = cv2.VideoCapture('data/video1.avi')
+        #cap = cv2.VideoCapture('data/video1.avi')
         # cap = cv2.VideoCapture('data/TownCentreXVID.avi.1')
         self.video = cap
 
@@ -69,62 +71,75 @@ app.layout = html.Div(
     [
          html.Div(
          [
-            #html.H1('Webcam Test'),
+            html.H1('Live Camera Feed'),
             html.Img(src='/video_feed',
-                     style={'height':'70%','width':'70%'})
+                     style={'height':'50%','width':'50%'})
          ], style={'textAlign':'center'}),
 
          html.Div(
          [
-            dcc.DatePickerSingle(
-                id='my-date-picker-single',
-                min_date_allowed=dt(1995, 8, 5),
-                max_date_allowed=dt(2017, 9, 19),
-                initial_visible_month=dt(2017, 8, 5),
-                date=str(dt(2017, 8, 25, 23, 59, 59))
-            )
-         ]),
+            dcc.RangeSlider(
+                id='range-slider',
+                min=min_range,
+                max=max_range,
+                step=1,
+                value=(min_range, max_range),
+                className='six columns'
+            ),
+
+         ],className='row'),
+
+         html.Div([html.Button('Toggle View',
+                     id='button',
+                     n_clicks=0),],className='row'),
 
          html.Div(
          [
-            dcc.Graph(
-                id='num_people',
-                figure=dict(
-                    layout=dict(
-                        plot_bgcolor=app_color["graph_bg"],
-                        paper_bgcolor=app_color["graph_bg"],
-                        height=500,
-                        width=750,
-                    )
+
+            html.Div([
+                dcc.Graph(
+                    id='num_people',
+                    figure=dict(
+                        layout=dict(
+                            plot_bgcolor=app_color["graph_bg"],
+                            paper_bgcolor=app_color["graph_bg"],
+                            height=400,
+                            width=550,
+                        )
+                    ),
                 ),
-                style={'textAlign':'center'}
-            ),
+            ],className='six columns'),
+
+             html.Div([
+                dcc.Graph(
+                    id='num_ages',
+                    figure=dict(
+                        layout=dict(
+                            plot_bgcolor=app_color["graph_bg"],
+                            paper_bgcolor=app_color["graph_bg"],
+                            height=400,
+                            width=550,
+                        )
+                    ),
+                ),
+             ],className='six columns'),
 
             dcc.Interval(
                 id='update',
                 interval=1000,
                 n_intervals=0
             ),
-         ], style={'textAlign':'center'}),
-
-         html.Div([
-            dcc.Graph(
-                id='num_ages',
-                figure=dict(
-                    layout=dict(
-                        plot_bgcolor=app_color["graph_bg"],
-                        paper_bgcolor=app_color["graph_bg"],
-                        height=500,
-                        width=750,
-                    )
-                ),
-            ),
-         ], style={'textAlign':'center'})
+         ], className='row'),
     ])
 
 
-@app.callback(Output('num_people', 'figure'), [Input('update', 'n_intervals')])
-def gen_num_people(interval):
+@app.callback(
+    Output('num_people', 'figure'),
+    [Input('update', 'n_intervals'),
+     Input('button','n_clicks')],
+    [State('range-slider','value')],
+)
+def gen_num_people(interval,n_clicks,range):
     """
     Generate the wind speed graph.
     :params interval: update the graph based on an interval
@@ -132,12 +147,18 @@ def gen_num_people(interval):
 
     esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
                       paper_bgcolor=app_color["graph_bg"],
-                    height=500,
-                    width=750))
+                    height=400,
+                    width=550))
 
     if not os.path.isfile('data.csv'): return esc
 
-    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
+    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
+    max_range = len(df)-1
+
+    if n_clicks%2 != 0:
+        df = df.iloc[range[0]:range[1],:]
+    else:
+        df = df.tail(200) #gets the last 200 datapoints
 
     data =  [{'x':df.index,'y':df.num_people,'type':'scatter','name':'Number of people',
             'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
@@ -151,8 +172,8 @@ def gen_num_people(interval):
         plot_bgcolor=app_color['graph_bg'],
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
-        height=500,
-        width=750,
+        height=400,
+        width=550,
         xaxis={
             #'range': 10,
             'showline': True,
@@ -175,8 +196,13 @@ def gen_num_people(interval):
 
     return dict(data=data, layout=layout)
 
-@app.callback(Output('num_ages', 'figure'), [Input('update', 'n_intervals')])
-def gen_num_ages(interval):
+@app.callback(
+    Output('num_ages', 'figure'),
+    [Input('update', 'n_intervals'),
+     Input('button','n_clicks')],
+    [State('range-slider','value')],
+)
+def gen_num_ages(interval,n_clicks,range):
     """
     Generate the wind speed graph.
     :params interval: update the graph based on an interval
@@ -184,12 +210,17 @@ def gen_num_ages(interval):
 
     esc = dict(layout= dict(plot_bgcolor=app_color["graph_bg"],
                       paper_bgcolor=app_color["graph_bg"],
-                    height=500,
-                    width=750))
+                    height=400,
+                    width=550))
 
     if not os.path.isfile('data.csv'): return esc
 
-    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time']).tail(200) #gets the last 200 datapoints
+    df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
+
+    if n_clicks%2 != 0:
+        df = df.iloc[range[0]:range[1],:]
+    else:
+        df = df.tail(200) #gets the last 200 datapoints
 
     data =  [{'x':df.index,'y':df['(0-10)'],'type':'scatter','name':'(0-10)',
             'line':{'color':'#42C4F7'}, 'hoverinfo':'skip','mode':'lines'},
@@ -213,8 +244,8 @@ def gen_num_ages(interval):
         plot_bgcolor=app_color['graph_bg'],
         paper_bgcolor=app_color['graph_bg'],
         font={'color': '#fff'},
-        height=500,
-        width=750,
+        height=400,
+        width=550,
         xaxis={
             #'range': 10,
             'showline': True,
