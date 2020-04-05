@@ -1,6 +1,6 @@
-pip3 install numpy==1.15.4
-pip3 install pandas==0.25.0
-pip3 install opencv-python==3.4.9
+pip3 install numpy
+pip3 install pandas
+pip3 install opencv-python
 pip3 install tensorflow==1.15.0 #cpu version of tensorflow
 pip3 install py-agender[cpu]  # for the cpu version of tensorflow
 
@@ -10,7 +10,7 @@ mkdir build; cd build; cmake ..; cmake --build .
 cd ..
 python3 setup.py install
 
-pip3 install face_recognition
+pip3 install face-recognition
 
 wget -O faster_rcnn_inception_v2_coco_2018_01_28.tar.gz  http://download.tensorflow.org/models/object_detection/faster_rcnn_inception_v2_coco_2018_01_28.tar.gz
 
