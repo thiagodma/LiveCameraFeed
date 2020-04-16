@@ -1,5 +1,11 @@
 # Live Camera Feed
 
+## Setup
+To run this code in your computer I suggest you to create a virtual environment. To install all the packages and download the important files just run:
+~~~
+./setup.sh
+~~~
+
 ## Introduction
 
 This repo contains the code used to do an application that does:
