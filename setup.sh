@@ -3,6 +3,7 @@ pip3 install pandas
 pip3 install opencv-python
 pip3 install tensorflow==1.15.0 #cpu version of tensorflow
 pip3 install py-agender[cpu]  # for the cpu version of tensorflow
+pip install dash==1.6.1
 
 git clone https://github.com/davisking/dlib.git
 cd dlib
