@@ -9,8 +9,8 @@ from dash.dependencies import Input, Output, State
 from flask import Flask, Response
 import cv2,os
 import pandas as pd
-#model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
-model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
+model_path = 'faster_rcnn_inception_v2_coco_2018_01_28/frozen_inference_graph.pb'
+#model_path = 'ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
 
 human_detector = HumanDetector(model_path,threshold=0.7)
 agender_detector = FaceAgeGenderDetection()
@@ -22,11 +22,11 @@ max_range = 100
 class VideoCamera():
     def __init__(self):
         cap = cv2.VideoCapture()
-        cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
+        #cap.open('http://81.14.37.24:8080/mjpg/video.mjpg?timestamp=1585844515370')
         #cap = cv2.VideoCapture('data/face-demographics-walking.mp4')
         #cap = cv2.VideoCapture('data/classroom.mp4')
         #cap = cv2.VideoCapture('data/video2.mp4')
-        #cap = cv2.VideoCapture('data/video1.avi')
+        cap = cv2.VideoCapture('data/video1.avi')
         # cap = cv2.VideoCapture('data/TownCentreXVID.avi.1')
         self.video = cap
 
@@ -123,7 +123,7 @@ app.layout = html.Div(
 
             dcc.Interval(
                 id='update',
-                interval=60000,
+                interval=1000,
                 n_intervals=0
             ),
          ], className='row'),
@@ -216,7 +216,7 @@ def gen_num_ages(interval,n_clicks,range):
     if not os.path.isfile('data.csv'): return esc
 
     df = pd.read_csv('data.csv',index_col=0,parse_dates=['time'])
-    
+
     #don't let the csv file increase with no limits
     if len(df) > 100000: df.tail(100000).to_csv('data.csv',index=False)
 
