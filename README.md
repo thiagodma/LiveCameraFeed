@@ -1,11 +1,5 @@
 # Live Camera Feed
 
-## Setup
-To run this code in your computer I suggest you to create a virtual environment. With you virtual environment activated, clone this repo. To install all the packages and download the important files just run:
-~~~
-./setup.sh
-~~~
-
 ## Introduction
 
 This repo contains the code used to do an application that does:
@@ -24,6 +18,23 @@ The application is fed with a live camera feed and makes plots with statistics o
 * **src/detectors.py** : file with the classes for object detection and face detection (plus gender and age estimation)
 * **src/true_value.py** : file with the class that uses the detectors
 * **setup.sh** : setup file that downloads python packages and downloads the models for object detection.
+
+## Setup
+To run this code in your computer I suggest you to create a virtual environment. With you virtual environment activated, clone this repo. To install all the packages and download the important files just run:
+~~~
+./setup.sh
+~~~
+
+With your environment set up you can run the app by running:
+~~~
+python src/main.py
+~~~
+
+If you want to just run the human detection/face detection plus age and gender estimation, run:
+~~~
+python src/true_value.py
+~~~
+
 
 ## Limitations
 
