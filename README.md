@@ -30,7 +30,7 @@ With your environment set up you can run the app by running:
 python src/main.py
 ~~~
 
-If you want to just run the human detection/face detection plus age and gender estimation, run:
+If you want to run only the human detection/face detection plus age and gender estimation (without plotting the stats), run:
 ~~~
 python src/true_value.py
 ~~~
